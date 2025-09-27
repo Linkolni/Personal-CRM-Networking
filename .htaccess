@@ -1,0 +1,8 @@
+<Files "config.php">
+    Order allow,deny
+    Deny from all
+</Files>
+# Suchmaschinen-Indexierung verhindern
+<IfModule mod_headers.c>
+    Header set X-Robots-Tag "noindex, nofollow"
+</IfModule>
