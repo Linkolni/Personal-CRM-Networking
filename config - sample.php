@@ -16,6 +16,12 @@ define('DB_NAME', '<name of database>');
 define('DB_USER', '<username>');
 define('DB_PASS', '<userpasswordS');
 
+//Company Logo und Name
+define('COMPANY_NAME', 'Solutor Personal CRM'); //Name der Firma oder Applikation
+define('COMPANY_LOGO', 'companylogo.png'); // Pfad zum Logo-Bild
+define('COMPANY_BACKGROUNDCOLOR', '#0A1E38'); //Hintergrundfarbe
+define('COMPANY_COLOR', '#FFFFFF'); //Schriftfarbe
+
 // PDO Datenbankverbindung
 try {
     $pdo = new PDO(

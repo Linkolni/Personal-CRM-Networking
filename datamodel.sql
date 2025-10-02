@@ -5,12 +5,11 @@ CREATE TABLE users (
     role ENUM('user','admin','inactive') NOT NULL DEFAULT 'inactive',
     tokens_sent INT NOT NULL DEFAULT 0,
     tokens_generated INT NOT NULL DEFAULT 0,
-    cost DECIMAL(10, 6) NOT NULL DEFAULT 0.00
+    tokens_cost DECIMAL(10, 6) NOT NULL DEFAULT 0.00,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-
-CREATE TABLE Persons (
+CREATE TABLE persons (
     person_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
     first_name VARCHAR(100),
@@ -26,6 +25,7 @@ CREATE TABLE Persons (
     birthday DATE,
     status ENUM('NEW', 'ACTIVE', 'INACTIVE') DEFAULT 'NEW',
     priority ENUM('TOP10', 'TOP25', 'TOP50', 'TOP100'),
+    circles VARCHAR(150),
     contact_cycle ENUM('WEEKLY', 'BIWEEKLY', 'MONTHLY', 'QUARTERLY', 'SEMI_ANNUALLY', 'ANNUALLY'),
     notes TEXT, -- Added for general notes about the person
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -34,18 +34,19 @@ CREATE TABLE Persons (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE Interactions (
+CREATE TABLE interactions (
     interaction_id INT PRIMARY KEY AUTO_INCREMENT,
     person_id INT NOT NULL,
-    user_id INT NOT NULL, -- Which user logged the interaction?
+    user_id INT NOT NULL, -- Bleibt NOT NULL
     interaction_date TIMESTAMP NOT NULL,
-    type ENUM('COFFEE_MEETING', 'EMAIL', 'LINKEDIN_MESSAGE', 'PHONE_CALL', 'LUNCH', 'MEETING', 'CONFERENCE', 'OTHER') NOT NULL,
+    interaction_type ENUM('COFFEE_MEETING', 'EMAIL', 'LINKEDIN_MESSAGE', 'PHONE_CALL', 'LUNCH', 'MEETING', 'CONFERENCE', 'OTHER') NOT NULL,
     memo TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (person_id) REFERENCES Persons(person_id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    FOREIGN KEY (person_id) REFERENCES persons(person_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE -- <-- Geändert zu CASCADE
 );
+
 
 CREATE TABLE `login_attempts` (
   `id` INT(11) NOT NULL AUTO_INCREMENT,
