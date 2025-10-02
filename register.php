@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+require_once 'user_functions.php';
 
 // Fehler- und Erfolgsmeldungen
 $message = "";
@@ -16,33 +17,32 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $password = trim($_POST['password'] ?? '');
     $captcha_answer = (int)($_POST['captcha'] ?? 0);
 
-    // Challenge prüfen
+    // 1. Validierung der Eingaben (unverändert)
     $expected = $_SESSION['captcha_num1'] + $_SESSION['captcha_num2'];
     if ($captcha_answer !== $expected) {
         $message = "❌ Die Sicherheitsfrage wurde falsch beantwortet.";
     } elseif (empty($username) || empty($password)) {
         $message = "❌ Bitte alle Felder ausfüllen.";
     } else {
-        // Passwort hashen
-        $hash = password_hash($password, PASSWORD_DEFAULT);
+        // 2. NEU: Aufruf der zentralen Registrierungsfunktion
+        $registration_success = register_user($pdo, $username, $password);
 
-        try {
-            $stmt = $pdo->prepare("INSERT INTO users (username, password_hash, role) VALUES (?, ?, 'inactive')");
-            $stmt->execute([$username, $hash]);
-            $message = "✅ Registrierung erfolgreich! Dein Konto ist inaktiv und muss freigeschaltet werden.";
-        } catch (PDOException $e) {
-            if ($e->getCode() === "23000") {
-                $message = "❌ Benutzername existiert bereits.";
-            } else {
-                $message = "❌ Fehler: " . $e->getMessage();
+        // 3. NEU: Auswertung des booleschen Rückgabewertes der Funktion
+        if ($registration_success) {
+            $message = "✅ Registrierung erfolgreich! Ihr Konto wurde angelegt und wartet auf Freischaltung durch einen Administrator.";
             }
+        else {
+            // Wenn die Funktion `false` zurückgibt, war der Benutzername bereits vergeben.
+            $message = "❌ Dieser Benutzername ist bereits vergeben. Bitte wählen Sie einen anderen.";
         }
     }
 
-    // Neue Challenge für nächsten Versuch generieren
+    // 4. Neue Challenge für nächsten Versuch generieren (unverändert)
     $_SESSION['captcha_num1'] = rand(1, 9);
     $_SESSION['captcha_num2'] = rand(1, 9);
 }
+
+
 ?>
 <!DOCTYPE html>
 <html lang="de">

@@ -1,0 +1,69 @@
+### Installationsanleitung für Ihr Personal CRM-Tool
+
+Diese Anleitung führt Sie Schritt für Schritt durch die Installation und Ersteinrichtung der CRM-Anwendung auf Ihrem Webserver oder Shared-Hosting-Paket.
+
+#### **Schritt 1: Dateien auf den Server kopieren**
+
+1.  Verbinden Sie sich mit Ihrem Webspace per FTP-Client (z.B. FileZilla) oder über den Dateimanager Ihres Hosting-Anbieters.
+2.  Navigieren Sie zum Hauptverzeichnis für Webinhalte. Dieses heißt oft `htdocs`, `public_html`, `www` oder ähnlich.
+3.  Erstellen Sie ein neues Unterverzeichnis für die Anwendung (z.B. `crm`).
+4.  Kopieren Sie alle Anwendungsdateien und -ordner in dieses neu erstellte Verzeichnis.
+
+#### **Schritt 2: Domain-Einrichtung (Optional)**
+
+Wenn Sie die Anwendung über eine eigene Subdomain (z.B. `crm.ihredomain.de`) statt über einen Pfad (`ihredomain.de/crm`) aufrufen möchten, sind folgende Schritte nötig:
+
+1.  **Subdomain anlegen:** Loggen Sie sich in die Verwaltungsoberfläche Ihres Hosters ein und erstellen Sie eine neue Subdomain.
+2.  **Verzeichnis zuweisen:** Weisen Sie die neue Subdomain dem in Schritt 1 erstellten Verzeichnis (z.B. `htdocs/crm`) zu.
+3.  **SSL-Zertifikat erstellen:** Für eine sichere HTTPS-Verbindung sollten Sie für die neue Subdomain ein SSL-Zertifikat (z.B. über Let's Encrypt) aktivieren. Dies ist bei den meisten Hostern kostenlos möglich.
+
+#### **Schritt 3: Datenbank einrichten**
+
+Die Anwendung benötigt eine MySQL-Datenbank, um alle Daten zu speichern.
+
+1.  Legen Sie über die Verwaltungsoberfläche Ihres Hosters eine neue, leere Datenbank an. Notieren Sie sich dabei folgende Informationen:
+    *   Datenbankname
+    *   Datenbank-Benutzername
+    *   Passwort des Datenbank-Benutzers
+    *   Datenbank-Host (oft `localhost`)
+2.  Öffnen Sie `phpMyAdmin` über die Verwaltungsoberfläche Ihres Hosters.
+3.  Wählen Sie die soeben erstellte Datenbank in der linken Spalte aus.
+4.  Klicken Sie auf den Reiter "Importieren".
+5.  Wählen Sie die Datei `datamodel.sql` aus dem Anwendungsverzeichnis aus und starten Sie den Import. Die notwendigen Tabellen (`users`, `persons`, `interactions`) werden dadurch automatisch angelegt.
+
+#### **Schritt 4: Anwendung konfigurieren**
+
+Die Verbindung zur Datenbank sowie das Erscheinungsbild der Anwendung werden in der Konfigurationsdatei festgelegt.
+
+1.  Suchen Sie im Hauptverzeichnis der Anwendung nach der Datei `config-sample.php`.
+2.  Erstellen Sie eine Kopie dieser Datei und benennen Sie sie in `config.php` um.
+3.  Öffnen Sie die neue `config.php` mit einem Texteditor und passen Sie die folgenden Werte an:
+
+    *   **Datenbank-Konfiguration:** Tragen Sie hier die in Schritt 3 notierten Zugangsdaten Ihrer Datenbank ein.
+        ```php
+        define('DB_HOST', 'localhost'); // Oder der von Ihrem Hoster angegebene Host
+        define('DB_PORT', '3306');
+        define('DB_NAME', '<Name Ihrer Datenbank>');
+        define('DB_USER', '<Ihr Datenbank-Benutzername>');
+        define('DB_PASS', '<Ihr Datenbank-Passwort>');
+        ```
+    *   **Erscheinungsbild:** Passen Sie den Namen, das Logo und die Farben der Anwendung an Ihre Wünsche an. Das Logo muss sich im `img`-Ordner befinden.
+        ```php
+        define('COMPANY_NAME', 'Ihr CRM-Name');
+        define('COMPANY_LOGO', 'img/ihrlogo.png');
+        define('COMPANY_BACKGROUNDCOLOR', '#0A1E38');
+        define('COMPANY_COLOR', '#FFFFFF');
+        ```
+    *   **Hinweis:** Der `OPENAI_API_KEY` wird erst in zukünftigen Versionen verwendet und kann ignoriert werden.
+
+4.  Speichern Sie die Änderungen in der `config.php`-Datei.
+
+#### **Schritt 5: Ersten Administrator-Benutzer anlegen**
+
+Zum Schluss müssen Sie einen ersten Benutzer anlegen und ihm Administratorrechte geben.
+
+1.  Rufen Sie in Ihrem Browser die `register.php`-Seite der Anwendung auf (z.B. `https://crm.ihredomain.de/register.php`).
+2.  Registrieren Sie sich mit Name und sicheremn Passwort.
+3.  Der erste Benutzer hat automatisch Admin-Rechte. Sie können Benutzerrechte als Admin über die Schaltfläche ändern.
+
+**Die Installation ist nun abgeschlossen!** Sie können sich jetzt über die `login.php`-Seite mit Ihren Zugangsdaten anmelden und haben vollen Administratorzugriff auf die Anwendung.

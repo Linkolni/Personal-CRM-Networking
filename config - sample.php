@@ -22,6 +22,11 @@ define('COMPANY_LOGO', 'companylogo.png'); // Pfad zum Logo-Bild
 define('COMPANY_BACKGROUNDCOLOR', '#0A1E38'); //Hintergrundfarbe
 define('COMPANY_COLOR', '#FFFFFF'); //Schriftfarbe
 
+//Impressum und Co
+define('COMPANY_IMPRESSUM', 'templates/impressum.htm'); //Pfad zum Impressum, keine Rechtliche Beratung!
+define('COMPANY_DATENSCHUTZ', 'templates/datenschutz.htm'); //Pfad zur Datenschutzerklärung, keine Rechtliche Beratung!
+
+
 // PDO Datenbankverbindung
 try {
     $pdo = new PDO(

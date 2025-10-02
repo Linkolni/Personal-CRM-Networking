@@ -28,13 +28,48 @@ function register_user(PDO $pdo, string $username, string $password): bool
     // Passwort sicher hashen
     $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
+    if (users_exist($pdo)) {
+        // Ja, es gibt bereits Benutzer -> neuer Benutzer wird 'inactive'.
+        $role = 'inactive';
+    } else {
+        // Nein, die Tabelle ist leer -> erster Benutzer wird 'admin' und ist aktiv.
+        $role = 'admin';
+
+    }
+
+
     // Neuen Benutzer mit der Rolle 'inactive' in die Datenbank einfügen
-    $stmt = $pdo->prepare("INSERT INTO users (username, password_hash, role) VALUES (:username, :password_hash, 'inactive')");
+    $stmt = $pdo->prepare("INSERT INTO users (username, password_hash, role) VALUES (:username, :password_hash, :role)");
     return $stmt->execute([
         ':username' => $username,
-        ':password_hash' => $password_hash
+        ':password_hash' => $password_hash,
+        ':role' => $role
     ]);
+
 }
+
+/**
+ * Prüft, ob bereits Benutzer in der Datenbank vorhanden sind.
+ *
+ * Diese Funktion ist nützlich, um z.B. bei der Erstinstallation zu entscheiden,
+ * ob der Registrierungs-Link angezeigt oder direkt zum Login weitergeleitet werden soll.
+ *
+ * @param PDO $pdo Die PDO-Datenbankverbindung.
+ * @return bool True, wenn mindestens ein Benutzer existiert, sonst False.
+ */
+function users_exist(PDO $pdo): bool
+{
+    // Führt eine Zählabfrage auf die 'users'-Tabelle aus. query() ist hier sicher,
+    // da keine benutzereingaben verarbeitet werden.
+    $stmt = $pdo->query("SELECT COUNT(*) FROM users");
+
+    // Holt das Ergebnis der ersten Spalte (den Zählwert).
+    $user_count = (int) $stmt->fetchColumn();
+
+    // Gibt true zurück, wenn der Zählwert größer als 0 ist, andernfalls false.
+    return $user_count > 0;
+}
+
 
 /**
  * Überprüft die Anmeldedaten eines Benutzers und startet eine Session.
@@ -191,14 +226,14 @@ function is_ip_locked(PDO $pdo, string $ip_address, int $max_attempts = 5, int $
          WHERE ip_address = :ip AND attempt_time > (NOW() - INTERVAL :period SECOND)"
     );
     $stmt->execute([':ip' => $ip_address, ':period' => $lockout_period]);
-    
-    $attempts = (int)$stmt->fetchColumn();
+
+    $attempts = (int) $stmt->fetchColumn();
 
     return $attempts >= $max_attempts;
 }
 
 // Hilfsfunktion, um die IP-Adresse des Benutzers sicher abzurufen
-function get_user_ip_address(): string 
+function get_user_ip_address(): string
 {
     if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
         return $_SERVER['HTTP_CLIENT_IP'];

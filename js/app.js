@@ -467,26 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <input type="text" class="form-control" id="last_name" name="last_name" value="${htmlspecialchars(person.last_name || '')}" required>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="email1" class="form-label">E-Mail 1</label>
-                        <input type="email" class="form-control" id="email1" name="email1" value="${htmlspecialchars(person.email1 || '')}">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="email2" class="form-label">E-Mail 2</label>
-                        <input type="email" class="form-control" id="email2" name="email2" value="${htmlspecialchars(person.email2 || '')}">
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="phone1" class="form-label">Telefon 1</label>
-                        <input type="tel" class="form-control" id="phone1" name="phone1" value="${htmlspecialchars(person.phone1 || '')}">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="phone2" class="form-label">Telefon 2</label>
-                        <input type="tel" class="form-control" id="phone2" name="phone2" value="${htmlspecialchars(person.phone2 || '')}">
-                    </div>
-                </div>
+
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="company" class="form-label">Firma</label>
@@ -495,6 +476,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="col-md-6 mb-3">
                         <label for="position" class="form-label">Position</label>
                         <input type="text" class="form-control" id="position" name="position" value="${htmlspecialchars(person.position || '')}">
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <label for="email1" class="form-label">E-Mail 1</label>
+                        <input type="email" class="form-control" id="email1" name="email1" value="${htmlspecialchars(person.email1 || '')}">
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <label for="email2" class="form-label">E-Mail 2</label>
+                        <input type="email" class="form-control" id="email2" name="email2" value="${htmlspecialchars(person.email2 || '')}">
+                    </div>
+
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <label for="phone1" class="form-label">Telefon 1</label>
+                        <input type="tel" class="form-control" id="phone1" name="phone1" value="${htmlspecialchars(person.phone1 || '')}">
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <label for="phone2" class="form-label">Telefon 2</label>
+                        <input type="tel" class="form-control" id="phone2" name="phone2" value="${htmlspecialchars(person.phone2 || '')}">
                     </div>
                 </div>
                 <div class="mb-3">
@@ -517,11 +518,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <hr>
                 <div class="row">
-                    <div class="col-md-4 mb-3">
+                    <div class="col-lg-3 col-md-6 mb-3">
                         <label for="birthday" class="form-label">Geburtstag</label>
                         <input type="date" class="form-control" id="birthday" name="birthday" value="${person.birthday || ''}">
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-lg-3 col-md-6 mb-3">
                         <label for="status" class="form-label">Status</label>
                         <select class="form-select" id="status" name="status">
                             <option value="NEW" ${person.status === 'NEW' || !person.status ? 'selected' : ''}>NEU</option>
@@ -529,7 +530,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <option value="INACTIVE" ${person.status === 'INACTIVE' ? 'selected' : ''}>Inaktiv</option>
                         </select>
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-lg-3 col-md-6 mb-3">
                         <label for="priority" class="form-label">Priorität</label>
                         <select class="form-select" id="priority" name="priority">
                             <option value="TOP10" ${person.priority === 'TOP10' ? 'selected' : ''}>Top 10</option>
@@ -538,18 +539,19 @@ document.addEventListener('DOMContentLoaded', () => {
                             <option value="TOP100" ${!person.priority || person.priority === 'TOP100' ? 'selected' : ''}>Top 100</option>
                         </select>
                     </div>
-                </div>
-                <div class="mb-3">
-                    <label for="contact_cycle" class="form-label">Kontaktzyklus</label>
-                    <select class="form-select" id="contact_cycle" name="contact_cycle">
-                        <option value="">(kein Zyklus)</option>
-                        <option value="WEEKLY" ${person.contact_cycle === 'WEEKLY' ? 'selected' : ''}>Wöchentlich</option>
-                        <option value="BIWEEKLY" ${person.contact_cycle === 'BIWEEKLY' ? 'selected' : ''}>Zweiwöchentlich</option>
-                        <option value="MONTHLY" ${person.contact_cycle === 'MONTHLY' ? 'selected' : ''}>Monatlich</option>
-                        <option value="QUARTERLY" ${person.contact_cycle === 'QUARTERLY' ? 'selected' : ''}>Quartalsweise</option>
-                        <option value="SEMI_ANNUALLY" ${person.contact_cycle === 'SEMI_ANNUALLY' ? 'selected' : ''}>Halbjährlich</option>
-                        <option value="ANNUALLY" ${person.contact_cycle === 'ANNUALLY' ? 'selected' : ''}>Jährlich</option>
-                    </select>
+              
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <label for="contact_cycle" class="form-label">Kontaktzyklus</label>
+                        <select class="form-select" id="contact_cycle" name="contact_cycle">
+                            <option value="">(kein Zyklus)</option>
+                            <option value="WEEKLY" ${person.contact_cycle === 'WEEKLY' ? 'selected' : ''}>Wöchentlich</option>
+                            <option value="BIWEEKLY" ${person.contact_cycle === 'BIWEEKLY' ? 'selected' : ''}>Zweiwöchentlich</option>
+                            <option value="MONTHLY" ${person.contact_cycle === 'MONTHLY' ? 'selected' : ''}>Monatlich</option>
+                            <option value="QUARTERLY" ${person.contact_cycle === 'QUARTERLY' ? 'selected' : ''}>Quartalsweise</option>
+                            <option value="SEMI_ANNUALLY" ${person.contact_cycle === 'SEMI_ANNUALLY' ? 'selected' : ''}>Halbjährlich</option>
+                            <option value="ANNUALLY" ${person.contact_cycle === 'ANNUALLY' ? 'selected' : ''}>Jährlich</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label for="notes" class="form-label">Notizen</label>

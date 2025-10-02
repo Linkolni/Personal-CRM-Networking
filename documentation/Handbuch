@@ -1,0 +1,81 @@
+Benutzerhandbuch: Ihr CRM-Tool
+
+Willkommen zu Ihrem persönlichen CRM-Tool! Diese Anleitung hilft Ihnen, alle Funktionen optimal zu nutzen, um Ihre Kontakte effizient zu verwalten.
+1. Die Programmoberfläche
+
+Die Anwendung ist in zwei Hauptbereiche unterteilt:
+
+    Linkes Panel: Zeigt Ihre Kontaktliste. Hier können Sie Kontakte suchen, sortieren und filtern.
+
+    Rechtes Panel: Dient als Detailansicht. Hier sehen Sie die Informationen eines ausgewählten Kontakts, bearbeiten diese oder fügen neue Interaktionen hinzu.
+
+2. Kontakte verwalten
+2.1. Einen neuen Kontakt erstellen
+
+    Klicken Sie oben links auf den blauen Button <i class="bi bi-plus-circle"></i> Neu.
+
+    Im rechten Panel erscheint ein leeres Formular. Füllen Sie die gewünschten Informationen aus. Das Feld Nachname ist ein Pflichtfeld.
+
+    Klicken Sie unten rechts auf Speichern, um den Kontakt anzulegen.
+
+2.2. Einen Kontakt bearbeiten
+
+    Suchen Sie den gewünschten Kontakt in der Liste auf der linken Seite.
+
+    Klicken Sie in der Zeile des Kontakts ganz rechts auf das Stift-Symbol (<i class="bi bi-pencil"></i>).
+
+    Im rechten Panel öffnet sich das Formular mit den bereits ausgefüllten Daten des Kontakts.
+
+    Ändern Sie die gewünschten Informationen.
+
+    Klicken Sie auf Speichern, um die Änderungen zu übernehmen, oder auf Abbrechen, um die Bearbeitung ohne Speichern zu beenden.
+
+2.3. Einen Kontakt löschen
+
+    Öffnen Sie den Kontakt zur Bearbeitung, wie in Schritt 2.2 beschrieben.
+
+    Im rechten Panel erscheint unten links der rote Button Löschen.
+
+    Klicken Sie auf Löschen. Es erscheint eine Sicherheitsabfrage, um ein versehentliches Löschen zu verhindern.
+
+    Bestätigen Sie die Abfrage, um den Kontakt und alle zugehörigen Interaktionen endgültig zu entfernen.
+
+3. Liste anzeigen und filtern
+3.1. Liste sortieren
+
+Die Kontaktliste kann nach verschiedenen Kriterien sortiert werden.
+
+    Klicken Sie auf eine der Spaltenüberschriften (z.B. Name, Firma oder Letzter Kontakt), um die Liste nach diesem Kriterium aufsteigend zu sortieren.
+
+    Ein erneuter Klick auf dieselbe Spaltenüberschrift kehrt die Sortierreihenfolge um (absteigend).
+
+    Ein kleines Pfeil-Symbol (<i class="bi bi-sort-up"></i> oder <i class="bi bi-sort-down"></i>) zeigt die aktive Sortierung an.
+
+3.2. Nach "Circles" filtern
+
+Über der Kontaktliste finden Sie eine Reihe von Filtern, die aus Ihren "Circles" (z.B. "Freunde", "Firma1") generiert werden.
+
+    Klicken Sie auf ein Filter-Badge (z.B. Freunde), um nur noch Kontakte anzuzeigen, die diesem Circle zugeordnet sind. Das aktive Filter-Badge wird hervorgehoben.
+
+    Klicken Sie auf das Badge Alle, um den Filter zurückzusetzen und wieder alle Kontakte anzuzeigen.
+
+4. Interaktionen protokollieren
+
+Für jeden Kontakt können Sie beliebig viele Interaktionen (wie Anrufe, E-Mails oder Treffen) festhalten.
+4.1. Interaktionen eines Kontakts ansehen
+
+    Suchen Sie den gewünschten Kontakt in der Liste.
+
+    Klicken Sie in der Zeile des Kontakts auf das Sprechblasen-Symbol (<i class="bi bi-chat-left-text"></i>).
+
+    Im rechten Panel werden nun alle bisherigen Interaktionen mit diesem Kontakt in chronologischer Reihenfolge angezeigt.
+
+4.2. Neue Interaktion hinzufügen
+
+    Öffnen Sie die Interaktionsansicht für einen Kontakt (Schritt 4.1).
+
+    Klicken Sie oben rechts auf den grünen Button <i class="bi bi-plus-circle"></i> Neue Interaktion.
+
+    Ein Formular erscheint. Geben Sie das Datum und die Art der Interaktion an. Sie können optional auch eine Notiz hinzufügen.
+
+    Klicken Sie auf Speichern. Die neue Interaktion erscheint sofort in der Liste.
