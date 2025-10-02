@@ -63,7 +63,7 @@ Die Verbindung zur Datenbank sowie das Erscheinungsbild der Anwendung werden in 
 Zum Schluss müssen Sie einen ersten Benutzer anlegen und ihm Administratorrechte geben.
 
 1.  Rufen Sie in Ihrem Browser die `register.php`-Seite der Anwendung auf (z.B. `https://crm.ihredomain.de/register.php`).
-2.  Registrieren Sie sich mit Name und sicheremn Passwort.
+2.  Registrieren Sie sich mit Name und sicherem Passwort.
 3.  Der erste Benutzer hat automatisch Admin-Rechte. Sie können Benutzerrechte als Admin über die Schaltfläche ändern.
 
 **Die Installation ist nun abgeschlossen!** Sie können sich jetzt über die `login.php`-Seite mit Ihren Zugangsdaten anmelden und haben vollen Administratorzugriff auf die Anwendung.
