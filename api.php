@@ -18,6 +18,7 @@ header('Content-Type: application/json');
 session_start();
 require_once 'config.php';
 require_once 'persons_functions.php'; // Pfad ggf. anpassen
+require_once 'ai_functions.php';
 
 // 1. Sicherheitscheck: Ohne gültige Session gibt es keine Daten.
 if (!isset($_SESSION['user_id'])) {
@@ -58,7 +59,7 @@ try {
             break;
 
         case 'get_interactions':
-            $person_id = (int) ($_GET['id'] ?? 0);
+            $person_id = (int) ($_GET['person_id'] ?? 0);
             if ($person_id > 0) {
                 $data = get_interactions_for_person($pdo, $person_id);
                 echo json_encode(['success' => true, 'data' => $data]);
@@ -142,6 +143,42 @@ try {
                 echo json_encode($result);
             } else {
                 throw new Exception('Ungültige Personen-ID zum Löschen.');
+            }
+            break;
+
+        case 'ask_ai':
+            $person_id = (int) ($_POST['person_id'] ?? 0);
+            $prompt = trim($_POST['prompt'] ?? '');
+
+            if ($person_id > 0 && !empty($prompt)) {
+                try {
+                    // KORREKTUR: Die $pdo-Variable als ersten Parameter übergeben
+                    $ai_response = get_ai_response($pdo, $person_id, $prompt);
+                    echo json_encode(['success' => true, 'response' => $ai_response]);
+                } catch (Exception $e) {
+                    http_response_code(500);
+                    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+                }
+            } else {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Personen-ID und Prompt sind erforderlich.']);
+            }
+            break;
+
+        case 'generate_ai_interaction':
+            $person_id = (int) ($_POST['person_id'] ?? 0);
+            if ($person_id > 0) {
+                try {
+                    // Die neue Backend-Funktion aufrufen
+                    $result = generate_and_save_ai_interaction($pdo, $person_id, $_SESSION['user_id']);
+                    echo json_encode($result);
+                } catch (Exception $e) {
+                    http_response_code(500);
+                    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+                }
+            } else {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Personen-ID ist erforderlich.']);
             }
             break;
 

@@ -131,7 +131,8 @@ function update_person(PDO $pdo, int $person_id, array $data): array
         'priority',
         'contact_cycle',
         'notes',
-        'circles'
+        'circles', 
+        'openai_conversation_id'
     ];
 
     // 2. Filtere die ankommenden Daten, um nur die erlaubten Schlüssel zu behalten.
@@ -154,6 +155,11 @@ function update_person(PDO $pdo, int $person_id, array $data): array
     // 2c. Absicherung für 'priority' -> wenn "" dann NULL wegen Datenbank EInstellung
     if (isset($filteredData['priority']) && empty($filteredData['priority'])) {
         $filteredData['priority'] = null;
+    }
+
+    // 2d. Absicherung für 'openai_conversation_id' -> wenn "" dann NULL wegen Datenbank EInstellung
+    if (isset($filteredData['openai_conversation_id']) && empty($filteredData['openai_conversation_id'])) {
+        $filteredData['openai_conversation_id'] = null;
     }
 
     // 3. Nur fortfahren, wenn es tatsächlich etwas zu aktualisieren gibt.
@@ -399,5 +405,91 @@ function delete_interaction(PDO $pdo, int $interaction_id): bool
     $stmt = $pdo->prepare("DELETE FROM interactions WHERE interaction_id = ?");
     return $stmt->execute([$interaction_id]);
 }
+
+// =========================================================================
+/**
+ * Generiert eine KI-basierte Follow-Up-E-Mail und speichert diese als neue Interaktion.
+ *
+ * Diese Funktion sammelt relevante Personendaten und die letzten Interaktionen,
+ * erstellt daraus einen detaillierten Prompt für die OpenAI API und speichert
+ * die Antwort als neue "Email"-Interaktion für das heutige Datum.
+ *
+ * @param PDO $pdo Die PDO-Datenbankverbindung.
+ * @param int $person_id Die ID der Person.
+ * @param int $current_user_id Die ID des angemeldeten Benutzers zur Berechtigungsprüfung.
+ * @return array Ein Array mit dem Erfolgsstatus und dem generierten Text.
+ * @throws Exception Wirft eine Ausnahme bei Fehlern.
+ */
+function generate_and_save_ai_interaction(PDO $pdo, int $person_id, int $current_user_id): array
+{
+    // 1. Relevante Daten abrufen
+    // Personendaten laden
+    $person = get_person_by_id($pdo, $person_id);
+    if (!$person) {
+        throw new Exception("Person nicht gefunden oder keine Berechtigung für diesen Datensatz.");
+    }
+
+    // Die letzten 5 Interaktionen für diese Person laden
+    $stmt = $pdo->prepare(
+        "SELECT interaction_date, interaction_type, memo 
+         FROM interactions 
+         WHERE person_id = ? 
+         ORDER BY interaction_date DESC, created_at DESC 
+         LIMIT 5"
+    );
+    $stmt->execute([$person_id]);
+    $interactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // 2. Den Prompt für die KI intelligent zusammenbauen
+    $prompt = "Formuliere eine kurze, nette E-Mail an die folgende Person mit der Absicht, professionell in Kontakt zu bleiben. Analysiere die Personendaten und die bisherigen Interaktionen, um die E-Mail so relevant und persönlich wie möglich zu gestalten. Antworte nur mit dem reinen E-Mail-Text, ohne Anrede wie 'Sehr geehrte/r' oder Grußformel am Ende.\n\n";
+    $prompt .= "--- Personendaten ---\n";
+
+    $fields_to_include = [
+        'Vorname' => 'first_name', 'Nachname' => 'last_name', 'Firma' => 'company',
+        'Position' => 'position', 'LinkedIn Profil' => 'linkedin_profile',
+        'Geburtstag' => 'birthday', 'Kontaktzyklus' => 'contact_cycle', 'Notizen' => 'notes'
+    ];
+
+    foreach ($fields_to_include as $label => $key) {
+        if (!empty($person[$key])) {
+            $prompt .= "{$label}: \"{$person[$key]}\"\n";
+        }
+    }
+
+    if (!empty($interactions)) {
+        $prompt .= "\n--- Letzte Interaktionen ---\n";
+        foreach ($interactions as $interaction) {
+            $date = date('d.m.Y', strtotime($interaction['interaction_date']));
+            $prompt .= "Datum: {$date}, Typ: {$interaction['interaction_type']}, Notiz: \"{$interaction['memo']}\"\n";
+        }
+    }
+
+    // 3. Die AI-Funktion aufrufen (aus ai_functions.php)
+    // Wichtig: Wir starten hier bewusst eine *neue*, kontextlose Konversation,
+    // um sicherzustellen, dass die Antwort nur auf den übergebenen Daten basiert.
+    // Dafür setzen wir die Konversations-ID in der Datenbank temporär zurück.
+    reset_ai_conversation($pdo, $person_id); 
+    $ai_response = get_ai_response($pdo, $person_id, $prompt);
+
+    // 4. Die KI-Antwort als neue Interaktion speichern
+    $interaction_data = [
+        'person_id' => $person_id,
+        'interaction_date' => date('Y-m-d'), // Heutiges Datum
+        'interaction_type' => 'Email',
+        'memo' => trim($ai_response)
+    ];
+ 
+    
+    $new_interaction_id = add_interaction($pdo, $interaction_data, $current_user_id);
+
+// Überprüfen Sie, ob das Ergebnis "falsy" ist (also false, 0, oder null)
+if (!$new_interaction_id) {
+    // Diese Bedingung ist jetzt korrekt und verursacht keine Warnung mehr
+    throw new Exception("Die KI-generierte Interaktion konnte nicht gespeichert werden.");
+}
+    // 5. Ergebnis zurückgeben
+    return ['success' => true, 'message' => 'KI-Interaktion erfolgreich erstellt.', 'memo' => $ai_response];
+}
+
 
 ?>

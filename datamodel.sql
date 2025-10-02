@@ -13,7 +13,7 @@ CREATE TABLE persons (
     person_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
     first_name VARCHAR(100),
-    last_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL, -- Einziges Pflichtfeld bezogen auf Person.
     email1 VARCHAR(255),
     email2 VARCHAR(255),
     phone1 VARCHAR(50),
@@ -28,6 +28,7 @@ CREATE TABLE persons (
     circles VARCHAR(150),
     contact_cycle ENUM('WEEKLY', 'BIWEEKLY', 'MONTHLY', 'QUARTERLY', 'SEMI_ANNUALLY', 'ANNUALLY'),
     notes TEXT, -- Added for general notes about the person
+    openai_conversation_id VARCHAR(255) DEFAULT NULL, -- For storing conversation context
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     

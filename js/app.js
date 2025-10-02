@@ -32,6 +32,15 @@ document.addEventListener('DOMContentLoaded', () => {
     listPanel.addEventListener('click', (event) => {
         const clickedElement = event.target;
 
+        // closest() findet das Elternelement 'tr.clickable-row', egal ob man auf Text oder eine Zelle klickt.
+        const clickedRow = clickedElement.closest('tr.clickable-row');
+        // Verhindert, dass das Ereignis ausgelöst wird, wenn man auf einen Button innerhalb der Zeile klickt.
+        if (clickedRow && !clickedElement.closest('button')) {
+            const personId = clickedRow.dataset.personId;
+            handleShowPersonDetails(personId); // Ruft die neue Handler-Funktion auf
+            return; // Wichtig: Weitere Klick-Handler werden nicht ausgeführt.
+        }
+
         // --- NEU: Klick auf ein Filter-Badge abfangen ---
         const badge = clickedElement.closest('.filter-badge');
         if (badge) {
@@ -89,6 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Behandelt alle anderen Buttons im Detail-Panel über ihre ID.
         switch (button.id) {
             // Personen-Formular
+
             case 'btn-delete-person':
                 // Zeigt die native Browser-Sicherheitsabfrage
                 if (confirm('Sind Sie sicher, dass Sie diesen Kontakt endgültig löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.')) {
@@ -114,6 +124,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('new-interaction-form-container').classList.add('d-none');
                 document.getElementById('btn-show-new-interaction-form').classList.remove('d-none');
                 break;
+            // Interaktions-Ansicht / Formular mit KI-Unterstützung KI-BUTTON
+            case 'btn-generate-ai-interaction':
+                    const personIdForAi = button.dataset.personId;
+                    handleGenerateAiInteraction(personIdForAi);
+                    break;
+
+
+            // Listenansicht Person-Ansicht 
+            case 'btn-edit-person-from-details':
+                const personId = button.dataset.personId;
+                handleEditPerson(personId); // Ruft die bestehende Funktion zum Öffnen des Formulars auf
+                break;
+
         }
     });
 
@@ -157,13 +180,22 @@ document.addEventListener('DOMContentLoaded', () => {
     /** Holt die Interaktionen einer Person von der API und zeigt sie im Detailbereich an. */
     async function handleShowInteractions(personId) {
         try {
-            currentPersonId = personId; // WICHTIG: Merkt sich die ID der Person für diese Ansicht.
-            const response = await fetch(`api.php?action=get_interactions&id=${personId}`, { cache: 'no-cache' });
-            const result = await response.json();
-            if (result.success) {
-                renderInteractions(result.data);
+            currentPersonId = personId;
+
+            // KORREKTUR: Lade Person und Interaktionen gleichzeitig
+            const [personResponse, interactionsResponse] = await Promise.all([
+                fetch(`api.php?action=get_person&id=${personId}`, { cache: 'no-cache' }),
+                fetch(`api.php?action=get_interactions&person_id=${personId}`, { cache: 'no-cache' })
+            ]);
+
+            const personResult = await personResponse.json();
+            const interactionsResult = await interactionsResponse.json();
+
+            if (personResult.success && interactionsResult.success) {
+                // Übergebe BEIDE Datensätze an die Render-Funktion
+                renderInteractions(personResult.data, interactionsResult.data);
             } else {
-                alert('Fehler: ' + result.message);
+                alert('Fehler beim Laden der Daten: ' + (personResult.message || interactionsResult.message));
             }
         } catch (error) {
             console.error('Netzwerkfehler:', error);
@@ -388,7 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             tableHtml += `
-            <tr>
+            <tr class="clickable-row" data-person-id="${person.person_id}" style="cursor: pointer;">
                 <td>${getTrafficLightIndicator(person.last_interaction, person.contact_cycle)}</td>
                 <td>${htmlspecialchars(person.first_name || '')} <strong>${htmlspecialchars(person.last_name)}</strong>
                     <div class="mt-1">${circlesHtml}</div>
@@ -570,12 +602,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /** Baut das HTML für die Interaktionsansicht, inklusive des Formulars zum Hinzufügen/Bearbeiten. */
-    function renderInteractions(interactions) {
+    function renderInteractions(person, interactions)  {
         const today = new Date().toISOString().split('T')[0];
         let html = `
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3>Interaktionen</h3>
-                <button id="btn-show-new-interaction-form" class="btn btn-success btn-sm"><i class="bi bi-plus-circle"></i> Neue Interaktion</button>
+                <button id="btn-generate-ai-interaction" class="btn btn-outline-info me-2" data-person-id="${person.person_id}" title="KI-generierte E-Mail erstellen">
+                    <i class="bi bi-robot"></i> KI-Vorschlag
+                </button>
+                <button id="btn-show-new-interaction-form" class="btn btn-success btn-sm">
+                    <i class="bi bi-plus-circle"></i> Neue Interaktion
+                </button>
             </div>
             <div id="new-interaction-form-container" class="card card-body mb-4 d-none">
                 <h5 class="card-title">Neue Interaktion hinzufügen</h5>
@@ -760,12 +797,144 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    /**
+     * Wandelt Zeilenvorschübe in <br>-Tags um (JS-Äquivalent zu PHP's nl2br).
+     */
+    function nl2br(str) {
+        if (typeof str !== 'string') return '';
+        return str.replace(/(\r\n|\n\r|\r|\n)/g, '<br>');
+    }
+
+    /**
+     * NEUE FUNKTION
+     * Baut die schreibgeschützte Detailansicht für einen Kontakt.
+     */
+    function renderPersonDetails(person) {
+        // Hilfsfunktion, um leere Werte anzeigefreundlich darzustellen
+        const display = (value) => value ? htmlspecialchars(value) : '<em class="text-muted">nicht angegeben</em>';
+
+        const html = `
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Kontaktdetails</h5>
+                <div>
+                    <button class="btn btn-outline-primary btn-sm" id="btn-edit-person-from-details" data-person-id="${person.person_id}">
+                        <i class="bi bi-pencil"></i> Bearbeiten
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title">${display(person.first_name)} ${display(person.last_name)}</h4>
+                <p class="card-text text-muted">${display(person.position)} bei ${display(person.company)}</p>
+                <hr>
+                <dl class="row">
+                    
+                    <dd class="col-sm-12">${display(person.circles)}</dd>
+                    <dt class="col-sm-2">E-Mail 1</dt>
+                    <dd class="col-sm-4">        
+                    ${person.email1
+                ? `<a href="mailto:${htmlspecialchars(person.email1)}">${htmlspecialchars(person.email1)}</a>`
+                : display(person.email1)
+            }                    
+                    <dt class="col-sm-2">E-Mail 2</dt>
+                    <dd class="col-sm-4">
+                    ${person.email2
+                ? `<a href="mailto:${htmlspecialchars(person.email2)}">${htmlspecialchars(person.email2)}</a>`
+                : display(person.email1)
+            }
+                    </dd>
+
+                    <dt class="col-sm-2">Telefon 1</dt>
+                    <dd class="col-sm-4">${display(person.phone1)}</dd>
+                    <dt class="col-sm-2">Telefon 1</dt>
+                    <dd class="col-sm-4">${display(person.phone2)}</dd>
+
+                    <dt class="col-sm-3">Priorität</dt>
+                    <dd class="col-sm-9"><span class="badge bg-info text-dark">${display(person.priority)}</span></dd>
+
+                    <dt class="col-sm-3">Status</dt>
+                    <dd class="col-sm-9"><span class="badge bg-secondary">${display(person.status)}</span></dd>
+                   
+
+
+                    
+                    <dt class="col-sm-3">Notizen</dt>
+                    <dd class="col-sm-9 preserve-lines">${display(person.notes)}</dd>
+                </dl>
+            </div>
+        </div>
+    `;
+        detailsPanel.innerHTML = html;
+    }
+
+    /**
+     * NEUE FUNKTION
+     * Holt die Daten für eine einzelne Person und ruft die schreibgeschützte Detailansicht auf.
+     */
+    async function handleShowPersonDetails(personId) {
+        try {
+            currentPersonId = personId; // Wichtig: ID merken!
+            const response = await fetch(`api.php?action=get_person&id=${personId}`, { cache: 'no-cache' });
+            const result = await response.json();
+            if (result.success) {
+                renderPersonDetails(result.data);
+            } else {
+                alert('Fehler beim Laden der Kontaktdetails: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Netzwerkfehler:', error);
+            alert('Ein Netzwerkfehler ist aufgetreten.');
+        }
+    }
+
 /**
- * Wandelt Zeilenvorschübe in <br>-Tags um (JS-Äquivalent zu PHP's nl2br).
+ * NEUE FUNKTION
+ * Löst die Erstellung einer KI-Interaktion aus, zeigt einen Ladezustand
+ * und aktualisiert die Ansicht nach Erfolg.
  */
-function nl2br(str) {
-    if (typeof str !== 'string') return '';
-    return str.replace(/(\r\n|\n\r|\r|\n)/g, '<br>');
+async function handleGenerateAiInteraction(personId) {
+    const aiButton = document.getElementById('btn-generate-ai-interaction');
+    if (!aiButton) return;
+
+    // Ladezustand anzeigen
+    aiButton.disabled = true;
+    aiButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generiere...';
+
+    try {
+        const formData = new FormData();
+        formData.append('person_id', personId);
+
+        const response = await fetch('api.php?action=generate_ai_interaction', {
+            method: 'POST',
+            body: formData
+        });
+
+        // --- VERBESSERTES DEBUGGING: Antwort als Text lesen ---
+        const responseText = await response.text();
+
+        // Zeige die rohe Server-Antwort IMMER in der Konsole an.
+        console.log("Rohe Server-Antwort:", responseText);
+
+        // Versuche, die Antwort als JSON zu parsen
+        const result = JSON.parse(responseText);
+        // --- ENDE DES DEBUGGING-TEILS ---
+
+        if (response.ok && result.success) {
+            await handleShowInteractions(personId);
+        } else {
+            throw new Error(result.message || 'Ein unbekannter Fehler ist aufgetreten.');
+        }
+    } catch (error) {
+        // Der 'error' enthält jetzt die JSON-Parse-Fehlermeldung, aber die Details stehen oben im console.log
+        console.error('Fehler beim Verarbeiten der KI-Interaktion:', error);
+        alert('Ein Serverfehler ist aufgetreten. Überprüfen Sie die Browser-Konsole für die detaillierte PHP-Fehlermeldung.');
+    } finally {
+        // Button-Zustand wiederherstellen
+        if (aiButton) {
+            aiButton.disabled = false;
+            aiButton.innerHTML = '<i class="bi bi-robot"></i> KI-Vorschlag';
+        }
+    }
 }
 
     // =========================================================================
