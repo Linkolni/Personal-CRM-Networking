@@ -631,7 +631,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <button class="btn btn-outline-primary btn-sm btn-edit-interaction" title="Bearbeiten" data-interaction='${interactionData}'><i class="bi bi-pencil"></i></button>
                             </div>
                         </div>
-                        <p class="mb-1">${htmlspecialchars(interaction.memo || '')}</p>
+                        <p class="mb-1 preserve-lines">${htmlspecialchars(interaction.memo || '')}</p>
                    
                     </div>`;
             });
@@ -759,6 +759,14 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Ein Fehler ist aufgetreten. Details:\n\n' + error.message);
         }
     }
+
+/**
+ * Wandelt Zeilenvorschübe in <br>-Tags um (JS-Äquivalent zu PHP's nl2br).
+ */
+function nl2br(str) {
+    if (typeof str !== 'string') return '';
+    return str.replace(/(\r\n|\n\r|\r|\n)/g, '<br>');
+}
 
     // =========================================================================
     // INITIALER AUFRUF

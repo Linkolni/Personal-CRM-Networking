@@ -156,7 +156,7 @@ if (is_ip_locked($pdo, $user_ip)) {
     
     <!-- Copyright-Hinweis im Footer-Stil -->
     <p class="mt-4 text-white-50">&copy; <?= date('Y') ?> Solutor - data and informataion<br>
-    <a href="https://solutor.de/themes/impressum.htm">Impressum</a> - <a href="https://solutor.de/themes/datenschutz.htm">Datenschutz</a></p>
+    <a href="<?= COMPANY_IMPRESSUM ?>">Impressum</a> - <a href="<?= COMPANY_DATENSCHUTZ ?>">Datenschutz</a></p>
 
 </div>
 

@@ -37,3 +37,8 @@
     background-color: #6f42c1 !important; /* Ein schöner Lila-Ton von Bootstrap */
     color: white;
 }
+
+/* Zeilenvorschübe in Memofeldern erlauben */
+.preserve-lines {
+    white-space: pre-line;
+}
