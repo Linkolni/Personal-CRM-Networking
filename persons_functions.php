@@ -8,7 +8,7 @@
  * Jede Funktion erwartet als ersten Parameter die aktive PDO-Datenbankverbindung ($pdo).
  * Die Funktionen nutzen Prepared Statements, um SQL-Injection-Angriffe zu verhindern.
  */
-
+require_once 'ai_functions.php';
 // =========================================================================
 // FUNKTIONEN FÜR PERSONEN (CRUD - Create, Read, Update, Delete)
 // =========================================================================
@@ -434,53 +434,10 @@ function delete_interaction(PDO $pdo, int $interaction_id): bool
  */
 function generate_and_save_ai_interaction(PDO $pdo, int $person_id, int $current_user_id): array
 {
-    // 1. Relevante Daten abrufen
-    // Personendaten laden
-    $person = get_person_by_id($pdo, $person_id);
-    if (!$person) {
-        throw new Exception("Person nicht gefunden oder keine Berechtigung für diesen Datensatz.");
-    }
-
-    // Die letzten 5 Interaktionen für diese Person laden
-    $stmt = $pdo->prepare(
-        "SELECT interaction_date, interaction_type, memo 
-         FROM interactions 
-         WHERE person_id = ? 
-         ORDER BY interaction_date DESC, created_at DESC 
-         LIMIT 5"
-    );
-    $stmt->execute([$person_id]);
-    $interactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // 2. Den Prompt für die KI intelligent zusammenbauen
-    $prompt = "Formuliere eine kurze, nette E-Mail an die folgende Person mit der Absicht, professionell in Kontakt zu bleiben. Analysiere die Personendaten und die bisherigen Interaktionen, um die E-Mail so relevant und persönlich wie möglich zu gestalten. Antworte nur mit dem reinen E-Mail-Text, ohne Anrede wie 'Sehr geehrte/r' oder Grußformel am Ende.\n\n";
-    $prompt .= "--- Personendaten ---\n";
-
-    $fields_to_include = [
-        'Vorname' => 'first_name', 'Nachname' => 'last_name', 'Firma' => 'company',
-        'Position' => 'position', 'LinkedIn Profil' => 'linkedin_profile',
-        'Geburtstag' => 'birthday', 'Kontaktzyklus' => 'contact_cycle', 'Notizen' => 'notes'
-    ];
-
-    foreach ($fields_to_include as $label => $key) {
-        if (!empty($person[$key])) {
-            $prompt .= "{$label}: \"{$person[$key]}\"\n";
-        }
-    }
-
-    if (!empty($interactions)) {
-        $prompt .= "\n--- Letzte Interaktionen ---\n";
-        foreach ($interactions as $interaction) {
-            $date = date('d.m.Y', strtotime($interaction['interaction_date']));
-            $prompt .= "Datum: {$date}, Typ: {$interaction['interaction_type']}, Notiz: \"{$interaction['memo']}\"\n";
-        }
-    }
+   
+    $prompt = create_AI_interaction_prompt($pdo, $person_id);
 
     // 3. Die AI-Funktion aufrufen (aus ai_functions.php)
-    // Wichtig: Wir starten hier bewusst eine *neue*, kontextlose Konversation,
-    // um sicherzustellen, dass die Antwort nur auf den übergebenen Daten basiert.
-    // Dafür setzen wir die Konversations-ID in der Datenbank temporär zurück.
-    reset_ai_conversation($pdo, $person_id); 
     $ai_response = get_ai_response($pdo, $person_id, $prompt);
 
     // 4. Die KI-Antwort als neue Interaktion speichern

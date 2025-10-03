@@ -79,7 +79,7 @@ function users_exist(PDO $pdo): bool
  * @param string $password Das Passwort im Klartext.
  * @return bool True bei erfolgreichem Login, False bei falschen Anmeldedaten.
  */
-function login_user(PDO $pdo, string $username, string $password): bool
+/*function login_user(PDO $pdo, string $username, string $password): bool
 {
     // Benutzerdaten abrufen. Wichtig: Der Login ist auch für 'inactive' Benutzer möglich,
     // aber der Zugriff auf andere Seiten wird durch is_user_logged_in() gesteuert.
@@ -94,6 +94,38 @@ function login_user(PDO $pdo, string $username, string $password): bool
         $_SESSION['role'] = $user['role'];
         return true;
     }
+    return false;
+}*/
+
+//neu: inaktive ausschließen
+function login_user(PDO $pdo, string $username, string $password): bool
+{
+    // Benutzerdaten abrufen.
+    $stmt = $pdo->prepare("SELECT id, password_hash, role FROM users WHERE username = :username");
+    $stmt->execute([':username' => $username]);
+    $user = $stmt->fetch();
+
+    // Prüfen, ob ein Benutzer gefunden wurde
+    if ($user) {
+        // NEU: Prüfen, ob die Rolle 'inactive' ist.
+        if ($user['role'] === 'inactive') {
+            // Wirf eine Exception, um den Login-Prozess mit einer klaren Fehlermeldung abzubrechen.
+            throw new Exception('Ihr Benutzerkonto ist deaktiviert. Bitte wenden Sie sich an den Administrator.');
+        }
+
+        // Wenn der Benutzer aktiv ist, das Passwort verifizieren.
+        if (password_verify($password, $user['password_hash'])) {
+            // Login erfolgreich: Session-Daten setzen.
+            session_regenerate_id(true);
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['username'] = $username;
+            $_SESSION['role'] = $user['role'];
+            return true;
+        }
+    }
+
+    // Benutzer nicht gefunden oder falsches Passwort.
+    // Aus Sicherheitsgründen wird hier keine spezifische Fehlermeldung zurückgegeben.
     return false;
 }
 
@@ -244,6 +276,51 @@ function get_user_ip_address(): string
     }
 }
 
+/**
+ * Ruft die Daten eines Benutzers anhand seiner ID ab.
+ *
+ * @param PDO $pdo Das PDO-Datenbankverbindungsobjekt.
+ * @param int $user_id Die ID des abzurufenden Benutzers.
+ * @return array|false Die Benutzerdaten als assoziatives Array oder false, wenn nicht gefunden.
+ */
+function get_user_by_id($pdo, $user_id) {
+    $stmt = $pdo->prepare(
+        'SELECT * 
+         FROM users 
+         WHERE id = ?'
+    );
+    $stmt->execute([$user_id]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
 
+/**
+ * Aktualisiert das Profil eines Benutzers (Persona und optional das Passwort).
+ *
+ * @param PDO $pdo Das PDO-Datenbankverbindungsobjekt.
+ * @param int $user_id Die ID des zu aktualisierenden Benutzers.
+ * @param string $persona Die neue Persona des Benutzers.
+ * @param string|null $new_password Das neue, unverschlüsselte Passwort. Wenn null, wird es nicht geändert.
+ * @return bool True bei Erfolg, false bei einem Fehler.
+ */
+function update_user_profile($pdo, $user_id, $persona, $new_password = null) {
+    if (!empty($new_password)) {
+        // Passwort nur aktualisieren, wenn ein neues angegeben wurde
+        $password_hash = password_hash($new_password, PASSWORD_DEFAULT);
+        $stmt = $pdo->prepare(
+            'UPDATE users 
+             SET persona = ?, password_hash = ? 
+             WHERE id = ?'
+        );
+        return $stmt->execute([$persona, $password_hash, $user_id]);
+    } else {
+        // Nur die Persona aktualisieren
+        $stmt = $pdo->prepare(
+            'UPDATE users 
+             SET persona = ? 
+             WHERE id = ?'
+        );
+        return $stmt->execute([$persona, $user_id]);
+    }
+}
 
 ?>

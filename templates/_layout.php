@@ -46,34 +46,8 @@
          Zeigt Logo + Firmenname + Login-Info
          Farben und Logo sind über config.php variabel.
          ========================================= -->
-    <header class="p-3" style="background-color: <?= COMPANY_BACKGROUNDCOLOR ?>; color: <?= COMPANY_COLOR ?>;">
-        <div class="container-fluid d-flex justify-content-between align-items-center">
-
-            <!-- Linke Kopfzeile: Logo und App-Name -->
-            <a href="index.php" class="d-flex align-items-center text-decoration-none"
-                style="color: <?= COMPANY_COLOR ?>;">
-                <!-- Firmenlogo (fixierte Höhe, Breite automatisch!) -->
-                <img src="<?= COMPANY_LOGO ?>" alt="Logo" class="me-2"
-                    style="height: 35px; width: auto; max-width: 80px;">
-                <!-- Anwendungsname -->
-                <span class="h3 mb-0"><?= COMPANY_NAME ?></span>
-            </a>
-
-            <!-- Rechte Kopfzeile: Login-Status und Logout-Link, Admins mit Admin-Link -->
-            <div>
-                <span>Angemeldet als: <?= htmlspecialchars($username) ?></span>
-                <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
-                    <a href="admin.php" class="btn btn-warning btn-sm ms-2">Admin</a>
-                <?php endif; ?>
-
-
-                <a href="logout.php" class="btn btn-sm ms-3"
-                    style="border-color: <?= COMPANY_COLOR ?>; color: <?= COMPANY_COLOR ?>;">
-                    Logout
-                </a>
-            </div>
-        </div>
-    </header>
+        <?php include 'templates/_header.php'; ?>
+-    
 
     <!-- =========================================
          HAUPTINHALT
@@ -100,16 +74,10 @@
          Farben analog zu Header.
          mt-auto: Schiebt Footer im Flexcontainer ans untere Ende.
          ========================================= -->
-    <footer class="text-center p-3 mt-auto"
-        style="background-color: <?= COMPANY_BACKGROUNDCOLOR ?>; color: <?= COMPANY_COLOR ?>;">
-        <!-- Angepasste Schriftgröße (z. B. via Bootstrap-Klasse, falls erwünscht) -->
-        <span class="fs-5">
-            &copy; <?= date('Y') ?> <?= COMPANY_NAME ?>
-        </span>
-    </footer>
+        <?php include 'templates/_footer.php'; ?>
 
     <!-- Bootstrap JS und eigene App-Logik -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/bootstrap.bundle.min.js"></script>
     <script src="js/app.js"></script>
 </body>
 
