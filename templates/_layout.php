@@ -26,7 +26,7 @@
 
     <!-- Bootstrap & Bootstrap Icons laden -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/bootstrap-icons.min.css" rel="stylesheet">
     <!-- Eigene Styles nach Bootstrap laden, damit sie überschreiben können -->
     <link rel="stylesheet" href="css/custom.css">
 </head>

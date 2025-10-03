@@ -97,6 +97,35 @@ try {
             }
             break;
 
+        case 'delete_interaction':
+            // Die ID aus dem POST-Request holen.
+            $interaction_id = (int) ($_POST['interaction_id'] ?? 0);
+
+            // Sicherheitsprüfung: Nur fortfahren, wenn eine gültige ID übergeben wurde.
+            if ($interaction_id <= 0) {
+                http_response_code(400); // Bad Request
+                echo json_encode(['success' => false, 'message' => 'Ungültige Interaktions-ID.']);
+                break;
+            }
+
+            try {
+                // Ihre bestehende PHP-Funktion aufrufen.
+                // Fügen Sie hier die $_SESSION['user_id'] als zweiten Parameter hinzu,
+                // falls Ihre Funktion eine Sicherheitsüberprüfung unterstützt.
+                $success = delete_interaction($pdo, $interaction_id);
+
+                if ($success) {
+                    echo json_encode(['success' => true]);
+                } else {
+                    throw new Exception('Die Interaktion konnte in der Datenbank nicht gelöscht werden.');
+                }
+            } catch (Exception $e) {
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            }
+            break;
+
+
         case 'save_person':
             $requestData = json_decode(file_get_contents('php://input'), true);
 

@@ -310,6 +310,18 @@ function get_all_unique_circles(PDO $pdo, int $user_id): array
 // FUNKTIONEN FÜR INTERAKTIONEN
 // =========================================================================
 
+
+function save_interaction(PDO $pdo, int $interaction_id, array $data, int $user_id)
+{
+    if ($interaction_id > 0) {
+        // Wenn eine ID vorhanden ist -> Bearbeiten
+        return update_interaction($pdo, $interaction_id, $data, $user_id);
+    } else {
+        // Wenn keine ID vorhanden ist -> Neu erstellen
+        return add_interaction($pdo, $data, $user_id);
+    }
+}
+
 /**
  * Fügt eine neue Interaktion für eine Person hinzu.
  * Die user_id wird direkt aus der Session geholt.

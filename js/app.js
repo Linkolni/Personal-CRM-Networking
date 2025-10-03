@@ -13,7 +13,6 @@ let currentSortField = 'last_name';
 let currentSortDir = 'ASC';
 let currentPersonId = null;
 let currentCircleFilter = null; // NEU: Speichert den aktiven Filter
-
 // =========================================================================
 // HAUPT-INITIALISIERUNG
 // =========================================================================
@@ -82,63 +81,100 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 2. Event-Listener für dynamische Buttons im rechten Detail-Panel.
-    detailsPanel.addEventListener('click', (event) => {
-        const button = event.target.closest('button');
-        if (!button) return;
+    detailsPanel.addEventListener('click', e => {
+        // 1. Klick-Ziel identifizieren
+        // Mit .closest('button') stellen wir sicher, dass wir den Button erwischen,
+        // auch wenn der Benutzer auf das Icon im Button klickt.
+        const button = e.target.closest('button');
+        if (!button) return; // Wenn der Klick nicht auf einem Button war, beenden.
 
-        // Klick auf "Bearbeiten" einer Interaktion wird hier separat behandelt.
-        if (button.classList.contains('btn-edit-interaction')) {
-            // Holt die Daten aus dem data-Attribut und füllt das Formular.
-            const interactionData = JSON.parse(button.dataset.interaction);
-            populateInteractionForm(interactionData);
-            return;
-        }
+        // 2. Aktionen basierend auf dem geklickten Button ausführen
+        // Wir verwenden switch(true), um flexible Bedingungen in den Cases zu ermöglichen.
+        // Es wird der erste Case ausgeführt, dessen Bedingung 'true' ergibt.
+        switch (true) {
 
-        // Behandelt alle anderen Buttons im Detail-Panel über ihre ID.
-        switch (button.id) {
-            // Personen-Formular
+            // ===================================
+            // === PERSONEN-BEZOGENE AKTIONEN ====
+            // ===================================
 
-            case 'btn-delete-person':
-                // Zeigt die native Browser-Sicherheitsabfrage
-                if (confirm('Sind Sie sicher, dass Sie diesen Kontakt endgültig löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.')) {
-                    handleDeletePerson();
-                }
-                break; // Wichtig!
+            // Fall 1: Person zum Bearbeiten öffnen
+            case button.id === 'btn-edit-person-from-details':
+                // Liest die personId aus dem data-Attribut des Buttons.
+                const personId = button.dataset.personId;
+                // Ruft die Funktion auf, die das Bearbeitungsformular für die Person anzeigt.
+                handleEditPerson(personId);
+                break;
 
-            case 'btn-save-person':
+            // Fall 2: Geänderte Personendaten speichern
+            case button.id === 'btn-save-person':
+                // Ruft die Funktion auf, die die Formulardaten sammelt und per API speichert.
                 handleSavePerson();
                 break;
-            case 'btn-cancel-edit':
+
+            // Fall 3: Bearbeitung der Person abbrechen
+            case button.id === 'btn-cancel-edit':
+                // Verwirft die Änderungen und kehrt zur Willkommensansicht zurück.
                 showWelcomeMessage();
                 break;
 
-            // Interaktions-Ansicht / Formular
-            case 'btn-show-new-interaction-form':
-                populateInteractionForm(); // Aufruf ohne Daten -> leeres Formular für "Neu"
+            // Fall 4: Person löschen
+            case button.id === 'btn-delete-person':
+                // Zeigt eine native Browser-Sicherheitsabfrage vor dem Löschen.
+                if (confirm('Sind Sie sicher, dass Sie diesen Kontakt endgültig löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.')) {
+                    handleDeletePerson();
+                }
                 break;
-            case 'btn-save-interaction':
+
+            // =======================================
+            // === INTERAKTIONS-BEZOGENE AKTIONEN ====
+            // =======================================
+
+            // Fall 5: Formular für eine NEUE Interaktion anzeigen
+            case button.id === 'btn-show-new-interaction-form':
+                // Ruft die Funktion `populateInteractionForm` ohne Daten auf.
+                // Diese bereitet ein leeres Formular vor.
+                populateInteractionForm();
+                break;
+
+            // Fall 6: Eine BESTEHENDE Interaktion bearbeiten (Prüfung auf Klasse!)
+            case button.classList.contains('btn-edit-interaction'):
+                // Liest die JSON-Daten der Interaktion aus dem data-Attribut.
+                const interactionData = JSON.parse(button.dataset.interaction);
+                // Ruft `populateInteractionForm` mit den Daten auf, um das Formular vorzubelegen.
+                populateInteractionForm(interactionData);
+                break;
+
+            // Fall 7: Eine neue oder bearbeitete Interaktion speichern
+            case button.id === 'btn-save-interaction':
+                // Ruft die Funktion auf, die die Interaktionsdaten speichert.
                 handleSaveInteraction();
                 break;
-            case 'btn-cancel-interaction':
+
+            // Fall 8: Eingabe im Interaktionsformular abbrechen
+            case button.id === 'btn-cancel-interaction':
+                // Versteckt das Formular und zeigt den "Neue Interaktion"-Button wieder an.
                 document.getElementById('new-interaction-form-container').classList.add('d-none');
                 document.getElementById('btn-show-new-interaction-form').classList.remove('d-none');
                 break;
-            // Interaktions-Ansicht / Formular mit KI-Unterstützung KI-BUTTON
-            case 'btn-generate-ai-interaction':
-                    const personIdForAi = button.dataset.personId;
-                    handleGenerateAiInteraction(personIdForAi);
-                    break;
 
-
-            // Listenansicht Person-Ansicht 
-            case 'btn-edit-person-from-details':
-                const personId = button.dataset.personId;
-                handleEditPerson(personId); // Ruft die bestehende Funktion zum Öffnen des Formulars auf
+            // Fall 9: KI-Vorschlag für eine Interaktion generieren
+            case button.id === 'btn-generate-ai-interaction':
+                // Liest die personId aus dem Button und startet den KI-Prozess.
+                const personIdForAi = button.dataset.personId;
+                handleGenerateAiInteraction(personIdForAi);
                 break;
 
+            // Fall 10: für das LÖSCHEN einer Interaktion
+            case button.id === 'btn-delete-interaction':
+                // Liest die ID aus dem versteckten Feld, das beim Öffnen des Formulars gefüllt wurde.
+                const interactionIdToDelete = document.getElementById('interaction_id').value;
+
+                // Ruft die dedizierte Handler-Funktion für das Löschen auf.
+                handleDeleteInteraction(interactionIdToDelete);
+                break;
         }
     });
+
 
     // =========================================================================
     // AKTIONEN (HANDLER-FUNKTIONEN)
@@ -296,6 +332,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
 
+        // Lesen Sie die ID aus dem versteckten Feld.
+        // Beim Erstellen ist sie leer, beim Bearbeiten ist sie gesetzt.
+        const interactionId = document.getElementById('interaction_id').value;
+        formData.append('interaction_id', interactionId);
+
         data.person_id = currentPersonId;
 
         if (!data.interaction_date || !data.interaction_type) {
@@ -306,6 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const isUpdate = data.interaction_id && data.interaction_id > 0;
         const action = isUpdate ? 'update_interaction' : 'add_interaction';
 
+        console.log("Interaction ID:", interactionId, " Action:", action); // Debug-Ausgabe in der Konsole
         try {
             // KORREKTUR: Es müssen Backticks (`) anstelle von einfachen Anführungszeichen (') verwendet werden,
             // damit die Variable ${action} korrekt eingesetzt wird.
@@ -602,7 +644,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /** Baut das HTML für die Interaktionsansicht, inklusive des Formulars zum Hinzufügen/Bearbeiten. */
-    function renderInteractions(person, interactions)  {
+    function renderInteractions(person, interactions) {
         const today = new Date().toISOString().split('T')[0];
         let html = `
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -639,9 +681,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         <label for="memo" class="form-label">Notizen</label>
                         <textarea class="form-control" id="memo" name="memo" rows="3"></textarea>
                     </div>
-                    <div>
+                    <div class="d-flex">
+                        <button type="button" id="btn-delete-interaction" class="btn btn-danger me-auto d-none">
+                            <i class="bi bi-trash"></i> Löschen
+                        </button>
                         <button type="button" id="btn-save-interaction" class="btn btn-primary">Speichern</button>
-                        <button type="button" id="btn-cancel-interaction" class="btn btn-secondary">Abbrechen</button>
+                        <button type="button" id="btn-cancel-interaction" class="btn btn-secondary  ms-2">Abbrechen</button>
                     </div>
                 </form>
             </div>
@@ -677,35 +722,54 @@ document.addEventListener('DOMContentLoaded', () => {
         html += `</div>`;
         detailsPanel.innerHTML = html;
     }
-
-    /** Füllt das Interaktionsformular (entweder leer für "Neu" oder mit Daten für "Bearbeiten"). */
+    /**
+     * Füllt das Interaktionsformular.
+     * - Ohne Argument: bereitet es für eine neue Eingabe vor.
+     * - Mit Argument: füllt es mit den Daten der zu bearbeitenden Interaktion.
+     * @param {object|null} interaction - Das Interaktionsobjekt zum Bearbeiten oder null.
+     */
     function populateInteractionForm(interaction = null) {
         const formContainer = document.getElementById('new-interaction-form-container');
         const form = document.getElementById('new-interaction-form');
         const title = formContainer.querySelector('h5');
+        const deleteButton = document.getElementById('btn-delete-interaction'); // Button referenzieren
 
-        const oldHiddenInput = form.querySelector('input[name="interaction_id"]');
-        if (oldHiddenInput) oldHiddenInput.remove();
-
-        if (interaction) {
-            title.textContent = 'Interaktion bearbeiten';
-            form.interaction_date.value = interaction.interaction_date;
-            form.interaction_type.value = interaction.interaction_type;
-            form.memo.value = interaction.memo;
-
-            const hiddenInput = document.createElement('input');
-            hiddenInput.type = 'hidden';
-            hiddenInput.name = 'interaction_id';
-            hiddenInput.value = interaction.interaction_id;
-            form.appendChild(hiddenInput);
-        } else {
-            title.textContent = 'Neue Interaktion hinzufügen';
-            form.reset();
-            form.interaction_date.value = new Date().toISOString().split('T')[0];
+        // Verstecktes ID-Feld erstellen/finden
+        let idInput = document.getElementById('interaction_id');
+        if (!idInput) {
+            idInput = document.createElement('input');
+            idInput.type = 'hidden';
+            idInput.id = 'interaction_id';
+            idInput.name = 'interaction_id';
+            form.prepend(idInput);
         }
 
+        if (interaction) {
+            // --- BEARBEITEN-MODUS ---
+            title.textContent = 'Interaktion bearbeiten';
+            idInput.value = interaction.interaction_id;
+            // Felder füllen
+            form.elements.interaction_date.value = interaction.interaction_date.substring(0, 10); //Formatiere Datum für input[type="date"] und weise es als predefault zu
+            form.elements.interaction_type.value = interaction.interaction_type;
+            form.elements.memo.value = interaction.memo || '';
+            // Löschen-Button anzeigen
+            deleteButton.classList.remove('d-none');
+        } else {
+            // --- NEU-MODUS ---
+            title.textContent = 'Neue Interaktion hinzufügen';
+            form.reset(); // Formular leeren
+            idInput.value = ''; // ID zurücksetzen
+
+            // Heutiges Datum als Standard setzen
+            form.elements.interaction_date.value = new Date().toISOString().split('T')[0];
+            // Löschen-Button verstecken, aber nur, wenn er existiert.
+            if (deleteButton) {
+                deleteButton.classList.add('d-none');
+            }
+        }
+
+        // Formular anzeigen
         formContainer.classList.remove('d-none');
-        document.getElementById('btn-show-new-interaction-form').classList.add('d-none');
     }
 
     /** Zeigt die Willkommensnachricht im Detailbereich an. */
@@ -887,55 +951,96 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-/**
- * NEUE FUNKTION
- * Löst die Erstellung einer KI-Interaktion aus, zeigt einen Ladezustand
- * und aktualisiert die Ansicht nach Erfolg.
- */
-async function handleGenerateAiInteraction(personId) {
-    const aiButton = document.getElementById('btn-generate-ai-interaction');
-    if (!aiButton) return;
+    /**
+     * NEUE FUNKTION
+     * Löst die Erstellung einer KI-Interaktion aus, zeigt einen Ladezustand
+     * und aktualisiert die Ansicht nach Erfolg.
+     */
+    async function handleGenerateAiInteraction(personId) {
+        const aiButton = document.getElementById('btn-generate-ai-interaction');
+        if (!aiButton) return;
 
-    // Ladezustand anzeigen
-    aiButton.disabled = true;
-    aiButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generiere...';
+        // Ladezustand anzeigen
+        aiButton.disabled = true;
+        aiButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Generiere...';
 
-    try {
-        const formData = new FormData();
-        formData.append('person_id', personId);
+        try {
+            const formData = new FormData();
+            formData.append('person_id', personId);
 
-        const response = await fetch('api.php?action=generate_ai_interaction', {
-            method: 'POST',
-            body: formData
-        });
+            const response = await fetch('api.php?action=generate_ai_interaction', {
+                method: 'POST',
+                body: formData
+            });
 
-        // --- VERBESSERTES DEBUGGING: Antwort als Text lesen ---
-        const responseText = await response.text();
+            // --- VERBESSERTES DEBUGGING: Antwort als Text lesen ---
+            const responseText = await response.text();
 
-        // Zeige die rohe Server-Antwort IMMER in der Konsole an.
-        console.log("Rohe Server-Antwort:", responseText);
+            // Zeige die rohe Server-Antwort IMMER in der Konsole an.
+            console.log("Rohe Server-Antwort:", responseText);
 
-        // Versuche, die Antwort als JSON zu parsen
-        const result = JSON.parse(responseText);
-        // --- ENDE DES DEBUGGING-TEILS ---
+            // Versuche, die Antwort als JSON zu parsen
+            const result = JSON.parse(responseText);
+            // --- ENDE DES DEBUGGING-TEILS ---
 
-        if (response.ok && result.success) {
-            await handleShowInteractions(personId);
-        } else {
-            throw new Error(result.message || 'Ein unbekannter Fehler ist aufgetreten.');
-        }
-    } catch (error) {
-        // Der 'error' enthält jetzt die JSON-Parse-Fehlermeldung, aber die Details stehen oben im console.log
-        console.error('Fehler beim Verarbeiten der KI-Interaktion:', error);
-        alert('Ein Serverfehler ist aufgetreten. Überprüfen Sie die Browser-Konsole für die detaillierte PHP-Fehlermeldung.');
-    } finally {
-        // Button-Zustand wiederherstellen
-        if (aiButton) {
-            aiButton.disabled = false;
-            aiButton.innerHTML = '<i class="bi bi-robot"></i> KI-Vorschlag';
+            if (response.ok && result.success) {
+                await handleShowInteractions(personId);
+            } else {
+                throw new Error(result.message || 'Ein unbekannter Fehler ist aufgetreten.');
+            }
+        } catch (error) {
+            // Der 'error' enthält jetzt die JSON-Parse-Fehlermeldung, aber die Details stehen oben im console.log
+            console.error('Fehler beim Verarbeiten der KI-Interaktion:', error);
+            alert('Ein Serverfehler ist aufgetreten. Überprüfen Sie die Browser-Konsole für die detaillierte PHP-Fehlermeldung.');
+        } finally {
+            // Button-Zustand wiederherstellen
+            if (aiButton) {
+                aiButton.disabled = false;
+                aiButton.innerHTML = '<i class="bi bi-robot"></i> KI-Vorschlag';
+            }
         }
     }
-}
+    /**
+     * Behandelt das Löschen einer Interaktion nach Bestätigung.
+     * @param {string} interactionId - Die ID der zu löschenden Interaktion.
+     */
+    async function handleDeleteInteraction(interactionId) {
+        // Sicherheitsprüfung, falls die ID aus irgendeinem Grund fehlt.
+        if (!interactionId) {
+            alert('Fehler: Keine Interaktions-ID zum Löschen gefunden.');
+            return;
+        }
+
+        // Sicherheitsabfrage, um versehentliches Löschen zu verhindern.
+        if (!confirm('Sind Sie sicher, dass Sie diese Interaktion endgültig löschen möchten?')) {
+            return; // Bricht ab, wenn der Benutzer "Abbrechen" wählt.
+        }
+
+        // Wir verwenden FormData, da Ihr Backend dies erwartet.
+        const formData = new FormData();
+        formData.append('interaction_id', interactionId);
+
+        try {
+            const response = await fetch('api.php?action=delete_interaction', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                //alert('Interaktion erfolgreich gelöscht.');
+                // Lädt die Interaktionsliste für den aktuellen Kontakt neu,
+                // um die Änderung sofort sichtbar zu machen.
+                handleShowInteractions(currentPersonId);
+            } else {
+                throw new Error(result.message || 'Ein unbekannter Fehler ist aufgetreten.');
+            }
+        } catch (error) {
+            console.error('Fehler beim Löschen der Interaktion:', error);
+            alert('Fehler: ' + error.message);
+        }
+    }
 
     // =========================================================================
     // INITIALER AUFRUF
