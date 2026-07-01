@@ -1,3 +1,24 @@
-config.php
+# Lokale Konfigurationen (sensible Daten: Welche Umgebung und Datenbank-Zugangsdaten)
+config/config_environment.php
+config/database.php
+config/apikeyconfig.php
+
+#Chats und Upload-Verzeichnis
+uploads/
+
+# IDE- und Editor-spezifische Dateien
+.vscode/
+.claude/
 .history
-.vscode
+.env
+
+#kopie aus Prod zur Sicherheit
+prodonly.htaccess 
+
+# Temporäre Dateien
+*.log
+logs/
+tmp/
+
+#Dateien 
+hash.php

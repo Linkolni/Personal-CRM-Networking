@@ -1,0 +1,10 @@
+# Zugriff auf alle Dateien im /config/-Verzeichnis sperren,
+# außer migrations.php (explizit erlaubt).
+
+Order Deny,Allow
+Deny from all
+
+<Files "migrations.php">
+    Order Allow,Deny
+    Allow from all
+</Files>
