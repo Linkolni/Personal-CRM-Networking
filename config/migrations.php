@@ -1,16 +1,83 @@
 <?php
 /**
  * migrations.php - Datenbank-Migrationstool
- * Version: 1.0.0
- * Datum: 2026-06-30
- * Änderung: Initiale Version – passwortgeschütztes Web-Tool zum Ausführen von SQL-Migrationen
+ * Version: 1.1.0
+ * Datum: 2026-07-02
+ * Änderungen:
+ * - 1.1.0: MIGRATION_PASSWORD war als Klartext-Konstante in der (getrackten) config.php hinterlegt und
+ *   damit über das öffentliche Git-Repo einsehbar - rotiert und in die gitignored
+ *   config_environment.php verschoben. Zusätzlich: Zugriffssperre außerhalb development
+ *   (MIGRATIONS_TOOL_ENABLED) und Konto+IP-Brute-Force-Schutz auf den Passwort-Check, analog
+ *   AuthController::handleLogin() (Phase 6, siehe handover.md).
+ * - 1.0.0: Initiale Version – passwortgeschütztes Web-Tool zum Ausführen von SQL-Migrationen.
  */
 
 // --- Konfiguration laden (ENVIRONMENT muss vor config.php definiert sein) ---
 require_once __DIR__ . '/../config/config_environment.php';
 require_once __DIR__ . '/../config/config.php';
 
+// --- Zugriffssperre außerhalb development, sofern nicht bewusst freigeschaltet ---
+// Kein Hinweis auf den Grund (404 statt 403), um die Existenz des Tools nicht zu bestätigen.
+if (ENVIRONMENT === 'production' && !(defined('MIGRATIONS_TOOL_ENABLED') && MIGRATIONS_TOOL_ENABLED)) {
+    http_response_code(404);
+    exit('Not Found');
+}
+
 session_start();
+
+// --- Brute-Force-Schutz für den Passwort-Check (Konto+IP-Sperre, 5 Versuche / 15 Minuten) ---
+const MIGRATIONS_MAX_ATTEMPTS = 5;
+const MIGRATIONS_LOCKOUT_MINUTES = 15;
+
+function migrationsAttemptIdentifier(): string
+{
+    return 'migrations_tool|' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+}
+
+function migrationsCheckLocked(mysqli $db, string $identifier): bool
+{
+    $stmt = $db->prepare('SELECT locked_until FROM login_attempts WHERE identifier = ?');
+    $stmt->bind_param('s', $identifier);
+    $stmt->execute();
+    $stmt->bind_result($lockedUntil);
+    $locked = $stmt->fetch() && $lockedUntil && strtotime($lockedUntil) > time();
+    $stmt->close();
+    return $locked;
+}
+
+function migrationsRecordFailedAttempt(mysqli $db, string $identifier): void
+{
+    $stmt = $db->prepare(
+        'INSERT INTO login_attempts (identifier, attempts, last_attempt) VALUES (?, 1, NOW())
+         ON DUPLICATE KEY UPDATE attempts = attempts + 1, last_attempt = NOW()'
+    );
+    $stmt->bind_param('s', $identifier);
+    $stmt->execute();
+    $stmt->close();
+
+    $stmt = $db->prepare('SELECT attempts FROM login_attempts WHERE identifier = ?');
+    $stmt->bind_param('s', $identifier);
+    $stmt->execute();
+    $stmt->bind_result($attempts);
+    $stmt->fetch();
+    $stmt->close();
+
+    if ($attempts >= MIGRATIONS_MAX_ATTEMPTS) {
+        $lockUntil = date('Y-m-d H:i:s', strtotime('+' . MIGRATIONS_LOCKOUT_MINUTES . ' minutes'));
+        $stmt = $db->prepare('UPDATE login_attempts SET locked_until = ? WHERE identifier = ?');
+        $stmt->bind_param('ss', $lockUntil, $identifier);
+        $stmt->execute();
+        $stmt->close();
+    }
+}
+
+function migrationsResetAttempts(mysqli $db, string $identifier): void
+{
+    $stmt = $db->prepare('DELETE FROM login_attempts WHERE identifier = ?');
+    $stmt->bind_param('s', $identifier);
+    $stmt->execute();
+    $stmt->close();
+}
 
 // --- Passwort-Authentifizierung ---
 $authenticated = !empty($_SESSION['migration_auth']);
@@ -21,12 +88,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         unset($_SESSION['migration_auth']);
         $authenticated = false;
     } elseif (isset($_POST['password'])) {
-        if (hash_equals(MIGRATION_PASSWORD, $_POST['password'])) {
+        $authDb = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+        $authDb->set_charset(DB_CHARSET);
+        $identifier = migrationsAttemptIdentifier();
+
+        if (migrationsCheckLocked($authDb, $identifier)) {
+            $authError = 'Zu viele Fehlversuche. Bitte in einigen Minuten erneut versuchen.';
+        } elseif (hash_equals(MIGRATION_PASSWORD, $_POST['password'])) {
+            migrationsResetAttempts($authDb, $identifier);
             $_SESSION['migration_auth'] = true;
             $authenticated = true;
         } else {
+            migrationsRecordFailedAttempt($authDb, $identifier);
+            sleep(2); // künstliche Verzögerung gegen Brute-Force, analog AuthController::handleLogin()
             $authError = 'Falsches Passwort.';
         }
+
+        $authDb->close();
     } elseif (isset($_POST['action']) && $_POST['action'] === 'reset' && $authenticated) {
         // Tracking-Tabelle leeren – nächster Aufruf führt alle Migrationen erneut aus
         $resetDb = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);

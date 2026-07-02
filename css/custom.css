@@ -4,6 +4,18 @@
  * Enthält benutzerdefinierte Stile für die Anwendung.
  */
 
+/*
+ * body ist vh-100 (feste Höhe = Bildschirmhöhe) mit flex-column.
+ * .main-content ist der einzige wachsende Flex-Bereich zwischen Navbar und Footer
+ * und bekommt die verbleibende Höhe automatisch zugewiesen (flex-grow-1).
+ * min-height: 0 ist nötig, damit ein Flex-Item unter seine Inhaltsgröße schrumpfen
+ * und stattdessen selbst scrollen kann (Standard-Flexbox-Verhalten sonst: kein Schrumpfen).
+ * So scrollt nur der Nutzinhalt, Header/Navbar und Footer bleiben immer sichtbar.
+ */
+.main-content {
+    min-height: 0;
+}
+
 /* 
  * Setzt die Zeile, die unsere zwei Hauptspalten enthält, auf eine feste Höhe.
  * vh = viewport height. 85vh bedeutet 85% der sichtbaren Browserhöhe.

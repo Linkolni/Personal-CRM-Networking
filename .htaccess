@@ -2,7 +2,20 @@
     Order allow,deny
     Deny from all
 </Files>
-# Suchmaschinen-Indexierung verhindern
+
+# Verzeichnis-Listing verhindern (falls im vhost nicht ohnehin global deaktiviert)
+Options -Indexes
+
 <IfModule mod_headers.c>
+    # Suchmaschinen-Indexierung verhindern
     Header set X-Robots-Tag "noindex, nofollow"
+
+    # Sicherheits-Header (Phase 6, siehe handover.md). Kein Content-Security-Policy hier: die Anwendung
+    # lädt Bootstrap/DataTables/jQuery von mehreren CDN-Hosts und nutzt ein Inline-<script> für die
+    # CSRF-Token-Injection (footer.php) - eine korrekte CSP müsste alle Quellen exakt allowlisten und
+    # wurde mangels Browser-Testmöglichkeit in dieser Session nicht umgesetzt (siehe handover.md).
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "DENY"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header set Strict-Transport-Security "max-age=31536000"
 </IfModule>

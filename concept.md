@@ -139,6 +139,63 @@ frei definierbare "Persona" als System-Instruktion personalisierbar.
 - Dashboard/Startseite (`home_content.php`) zeigt eine Willkommensmeldung sowie eine Liste der
   "Top 10"-Kontakte (Filter auf `priority = TOP10`) — im aktuellen Code allerdings nicht mehr in den
   regulären Seitenaufruf (`index.php`) eingebunden, sondern nur als Template-Fragment vorhanden.
+  Soll-Konzept für den Neuaufbau: siehe 4.12.
+
+### 4.12 Dashboard (Soll-Konzept für den Neuaufbau)
+
+Das Dashboard ist die Startseite nach dem Login und beantwortet auf einen Blick die Kernfrage des
+Systems: "Wen sollte ich als Nächstes kontaktieren?" Es ist eine rein lesende Aggregation vorhandener
+Daten — keine Änderung am Datenmodell (Abschnitt 7), keine eigenen Bearbeitungsfunktionen. Alle Blöcke
+zeigen ausschließlich Daten des angemeldeten Benutzers (Ownership gemäß Abschnitt 2); jeder
+Personeneintrag verlinkt auf die Detailansicht (4.4). Ein Block ohne Inhalt zeigt einen kurzen
+Hinweistext statt einer leeren Tabelle. Anzeigereihenfolge (zweispaltiges Raster): D1, D4, D3, D2, D5, D6,
+D7, D8.
+
+| ID | Stufe | Block | Anforderung |
+|---|---|---|---|
+| D1 | MUSS | Fällige Kontakte | Zeigt Personen mit Ampelstatus gelb oder rot (Berechnung gemäß 4.7), sortiert rot vor gelb, innerhalb gleicher Farbe längste Zeit seit letzter Interaktion zuerst; maximal 8 Einträge. Je Eintrag: Name, Firma, Priorität, Ampel, Datum der letzten Interaktion. |
+| D2 | MUSS | Anstehende Geburtstage | Zeigt Personen, deren Geburtstag (Jahrestag) innerhalb der nächsten 14 Tage inkl. heute liegt, sortiert nach Nähe zum heutigen Datum; heutige Geburtstage sind hervorgehoben; maximal 5 Einträge. Je Eintrag: Name, Datum. |
+| D3 | MUSS | Wichtigste Kontakte | Zeigt Personen mit Priorität `TOP10` inkl. Ampelstatus (Fortführung der bisherigen Startseiten-Funktion aus 4.11); auf der Oberfläche als "Top 5" beschriftet, maximal 5 Einträge (Kürzung gegenüber der zugrundeliegenden Priorität `TOP10`, die als Klassifizierung in 4.4 unverändert bleibt). |
+| D4 | SOLL | Unbearbeitete neue Kontakte | Zeigt Personen mit Status `NEW`, älteste zuerst — als Erinnerung, Priorität, Circles und Kontaktzyklus zu vergeben; maximal 8 Einträge. |
+| D5 | SOLL | Letzte Aktivitäten | Zeigt die 3 jüngsten Interaktionen über alle Personen des Benutzers (Datum, Art, Personenname, Memo-Anriss). |
+| D6 | SOLL | Netzwerk-Kennzahlen | Zeigt als Kennzahl ausschließlich die Anzahl Kontakte je Ampelfarbe (grün/gelb/rot/grau). |
+| D7 | KANN | Aus den Augen verloren | Zeigt maximal 5 Personen ohne Kontaktzyklus, deren letzte Interaktion länger als 6 Monate zurückliegt oder die noch nie eine Interaktion hatten — als Impuls, den "grauen" Bestand zu reaktivieren oder auszusortieren. |
+| D8 | KANN | Circle-Übersicht | Zeigt je Circle die Anzahl zugeordneter Personen als klickbares Badge, verlinkt auf die entsprechend vorgefilterte Kontaktliste (4.5). |
+
+**Annahmen** (bei Abnahme zu bestätigen): Die Zahlenwerte in D1-D5 und D7 (8 Einträge bei D1/D4,
+5 Einträge bei D2/D3, 14 Tage bei D2, 3 Einträge bei D5, 6 Monate bei D7) sind Vorschlagswerte ohne
+fachliche Vorgabe des Auftraggebers und wurden im Zuge mehrerer Rückmeldungen des Auftraggebers
+schrittweise nachjustiert, um die Gesamthöhe des Dashboards zu reduzieren.
+
+### 4.13 Volltextsuche über Kontakte
+
+- Ein Suchfeld oberhalb der Kontaktliste durchsucht bei jedem Kontakt des angemeldeten Benutzers die Felder
+  Vor-/Nachname, Firma, Position und Notizen auf Teilstring-Treffer (case-insensitive), clientseitig auf der
+  bereits geladenen, vollständigen Kontaktliste — Notizen sind Teil von `persons` und ohnehin Teil des beim
+  Laden der Liste übertragenen Datensatzes je Person, es ist kein zusätzlicher Serverzugriff nötig.
+- Die Liste reduziert sich sofort auf Treffer; kein Treffer zeigt einen Hinweistext statt einer leeren Tabelle.
+- Ergänzt, ersetzt aber nicht die Circle-Filter-Badges (4.5); beide Filter sind gleichzeitig kombinierbar
+  (UND-Verknüpfung).
+- Ownership gilt wie überall: durchsucht wird ausschließlich der Datenbestand des angemeldeten Benutzers
+  (die Liste wird bereits serverseitig auf `user_id` gefiltert geladen, die Suche selbst erfordert dadurch
+  keinen eigenen Ownership-Check).
+
+### 4.14 Datenexport (Backup)
+
+- Der angemeldete Benutzer kann über sein Profil (4.10) einen Export **seiner eigenen** Daten (Personen und
+  zugehörige Interaktionen) als Datei anstoßen und direkt herunterladen.
+- Zweck: Datensicherung/Mitnahme, unabhängig vom Hosting-Betreiber.
+- Der Export enthält ausschließlich Datensätze, die dem anfragenden Benutzer gehören (`user_id`-Filterung);
+  Zugangsdaten anderer Benutzer, Sessions oder `login_attempts` sind nicht Teil des Exports.
+- Format: SQL-Datei mit `INSERT`-Anweisungen für die eigenen Zeilen aus `persons` und `interactions`
+  (importierbar in eine kompatible Datenbank).
+
+### 4.15 LinkedIn-Profildaten zu einem Kontakt
+
+- Das Feld `linkedin_profile` (4.4) speichert weiterhin nur eine manuell eingetragene URL/ID. Es gibt bewusst
+  **keine** automatisierte Beschaffung oder Anreicherung von LinkedIn-Profildaten (z. B. aktuelle Position,
+  Foto, gemeinsame Kontakte) zu einer Person — mangels ohne Weiteres nutzbarem, offiziellem
+  LinkedIn-API-Zugang für diesen Zweck (siehe Abschnitt 8, A1: vom Auftraggeber bestätigt, Status quo).
 
 ## 5. Geschäftsregeln / Validierungen (zusammengefasst)
 
@@ -153,6 +210,9 @@ frei definierbare "Persona" als System-Instruktion personalisierbar.
   allererste Account.
 - Login: gesperrte IPs (Brute-Force) werden vor jeder Formularverarbeitung abgewiesen; `inactive`-Accounts
   werden nach Passwortprüfung sofort wieder ausgeloggt.
+- Datenexport (4.14) filtert serverseitig zwingend auf `user_id` des angemeldeten Benutzers. Die
+  Volltextsuche (4.13) läuft rein clientseitig auf der bereits `user_id`-gefiltert geladenen Kontaktliste
+  und benötigt daher keinen eigenen serverseitigen Ownership-Check.
 
 ## 6. Nicht-funktionale Aspekte (Ist-Zustand)
 
@@ -185,47 +245,17 @@ Quelle: [`datamodel.sql`](datamodel.sql). Wird beim Neuaufbau **1:1 beibehalten*
   `LINKEDIN_MESSAGE`, `PHONE_CALL`, `LUNCH`, `MEETING`, `CONFERENCE`, `OTHER`), `memo`, `created_at`.
 - **`login_attempts`**: `id`, `ip_address`, `attempt_time` — rein technisch, kein fachliches Objekt.
 
-## 8. Bekannte Probleme im Ist-System (beim Neuaufbau zu beheben)
+## 8. Bekannte Probleme (Ist-Zustand) und Annahmen
 
-Diese Punkte sind funktional/sicherheitsrelevant und sollten im neuen System korrigiert werden, obwohl das
-Datenmodell gleich bleibt:
-
-1. **Fehlende Berechtigungsprüfung (IDOR)**: `get_person_by_id()`, die API-Aktion `get_person`,
-   `get_interactions_for_person()` und `update_person()` prüfen nicht, ob die angefragte `person_id`
-   tatsächlich dem angemeldeten Benutzer gehört. Ein eingeloggter Benutzer kann durch Erraten/Iterieren von
-   IDs fremde Kontakte lesen und sogar verändern. Nur `delete_person()` und `update_interaction()` prüfen
-   korrekt den Eigentümer.
-2. **Fehlerhafte Spaltenreferenz**: In `get_ai_response()` (`ai_functions.php`) wird die
-   `openai_conversation_id` mit `UPDATE persons SET ... WHERE id = ?` gespeichert — die Tabelle `persons`
-   hat aber keine Spalte `id` (Primärschlüssel ist `person_id`). Die Konversationsfortführung greift dadurch
-   nie.
-3. **Unwirksamer KI-Prompt-Kontext**: `create_AI_interaction_prompt()` verwendet Feldnamen
-   (`name`, `industry`, `status_prio`), die in der `persons`-Tabelle gar nicht existieren; nur `notes`
-   ist tatsächlich vorhanden. Die beabsichtigte Anreicherung des Prompts mit Personendaten funktioniert also
-   größtenteils nicht.
-4. **Kein CSRF-Schutz**: Weder die Admin-Formulare (Rollenänderung/Löschen) noch die AJAX-Aktionen in
-   `api.php` verwenden ein CSRF-Token.
-5. **Doppelte Funktionsdefinition**: `handleSavePerson()` ist in `app.js` zweimal definiert (toter Code,
-   die zweite Definition überschreibt die erste).
-6. **Copy-Paste-Fehler in der Detailansicht**: Bei fehlender `email2` zeigt `renderPersonDetails()`
-   fälschlich den Wert von `email1` statt eines "nicht angegeben"-Hinweises für `email2`.
-7. **Token-/Kostenzähler nicht befüllt**: `users.tokens_sent/tokens_generated/tokens_cost` sind im
-   Datenmodell vorgesehen und werden im Profil angezeigt, aber im KI-Aufruf (`get_ai_response`) nirgends
-   aktualisiert — die Werte bleiben dauerhaft 0.
-8. **Dashboard-Fragment ungenutzt**: `templates/home_content.php` (Willkommenstext + Top-10-Liste) wird von
-   `index.php` nicht mehr eingebunden; falls diese Ansicht fachlich gewünscht ist, muss sie im Neuaufbau
-   bewusst reaktiviert werden, andernfalls kann sie entfallen.
-9. **Sensibler API-Key im Klartext**: `config.php` enthält den OpenAI-API-Key im Klartext. Die Datei ist
-   zwar über `.gitignore` von Git ausgeschlossen, ein Secret-Management (Umgebungsvariablen o. Ä.) fehlt
-   aber komplett — sollte im Neuaufbau vorgesehen werden.
+- **Bekannter Bug** (referenziert aus 4.9): Die Speicherung der `openai_conversation_id` erfolgt im
+  Ist-System fehlerhaft anhand von `id` statt `person_id`, wodurch der Konversationskontext für Folgeanfragen
+  nicht zuverlässig wiederhergestellt wird. Im Neuaufbau zu beheben (siehe itdesign.md, Abschnitt 10).
+- **A1 — LinkedIn-Profildaten (4.15), vom Auftraggeber bestätigt (02.07.2026)**: Es gibt keinen offiziellen,
+  ohne Weiteres nutzbaren LinkedIn-API-Zugang, um Profildaten zu einem gespeicherten Kontakt automatisiert
+  abzurufen. Entscheidung: Status quo — es bleibt beim bestehenden manuellen Freitextfeld
+  `linkedin_profile`, keine Anbindung einer Drittanbieter-API und kein automatisierter Such-Link.
 
 ## 9. Ausblick: Ziel-Architektur für den Neuaufbau
 
 Dieses Fachkonzept beschreibt ausschließlich den **fachlichen** Ist-Zustand. Die technische Umsetzung des
-Neuaufbaus ist ein separater, nachgelagerter Schritt und soll sich am Bauplan von `bukido.solutor.de`
-orientieren (siehe dortige `claude.md`): klassisches MVC in PHP mit strikter Trennung von Controllern,
-Models und Views, Front-Controller-Routing (`index.php?page=...&action=...`), Autoloading über
-`bootstrap.php`, `Database`-Singleton mit Prepared Statements, RBAC über einen `AuthHelper`,
-Mehrsprachigkeits-Helper `t()`, sowie Bootstrap/DataTables im Frontend. Die in Abschnitt 8 genannten
-Probleme (insbesondere die fehlenden Berechtigungsprüfungen) sollten dabei durch das RBAC-/Ownership-Muster
-des Referenzprojekts sauber gelöst werden, ohne das Datenmodell aus Abschnitt 7 zu verändern.
+Neuaufbaus steht in itdesign.md

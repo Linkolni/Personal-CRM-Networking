@@ -1,0 +1,26 @@
+CREATE TABLE IF NOT EXISTS `persons` (
+    `person_id`             INT PRIMARY KEY AUTO_INCREMENT,
+    `user_id`               INT NOT NULL,
+    `first_name`            VARCHAR(100) NULL,
+    `last_name`             VARCHAR(100) NOT NULL,
+    `email1`                VARCHAR(255) NULL,
+    `email2`                VARCHAR(255) NULL,
+    `phone1`                VARCHAR(50) NULL,
+    `phone2`                VARCHAR(50) NULL,
+    `company`               VARCHAR(150) NULL,
+    `position`              VARCHAR(150) NULL,
+    `linkedin_profile`      VARCHAR(255) NULL,
+    `website`               VARCHAR(255) NULL,
+    `birthday`              DATE NULL,
+    `status`                ENUM('NEW', 'ACTIVE', 'INACTIVE') NOT NULL DEFAULT 'NEW',
+    `priority`              ENUM('TOP10', 'TOP25', 'TOP50', 'TOP100') NULL,
+    `circles`               VARCHAR(150) NULL,
+    `contact_cycle`         ENUM('WEEKLY', 'BIWEEKLY', 'MONTHLY', 'QUARTERLY', 'SEMI_ANNUALLY', 'ANNUALLY') NULL,
+    `notes`                 TEXT NULL,
+    `openai_conversation_id` VARCHAR(255) NULL,
+    `created_at`            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`            TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    KEY `idx_persons_user_id` (`user_id`),
+    CONSTRAINT `fk_persons_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
